@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notice2Action — Autonomous Document-to-Action & Verification Agent</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: '#0A0E17',
+            surface: {
+              DEFAULT: '#111827',
+              muted: '#1E293B',
+              border: '#334155'
+            },
+            accent: {
+              cyan: '#38BDF8',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+              indigo: '#6366F1'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+            sans: ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0A0E17; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(56, 189, 248, 0.3);
+    }
+    .glow-rose {
+      box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.3);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.3);
+    }
+  </style>
+</head>
+
+<body class="bg-obsidian text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-accent-cyan selection:text-obsidian">
+
+  <!-- TOP APP BAR -->
+  <header class="border-b border-surface-border bg-surface/90 backdrop-blur sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accent-cyan via-accent-indigo to-accent-rose flex items-center justify-center shadow-lg shadow-accent-cyan/20">
+        <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-accent-cyan bg-clip-text text-transparent">Notice2Action</span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/30">v1.0 PROD</span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-accent-indigo/10 text-accent-indigo border border-accent-indigo/30">PS01 AGENT</span>
+        </div>
+        <p class="text-xs text-slate-400">Autonomous Document-to-Action & Deterministic Verification Agent</p>
+      </div>
+    </div>
+
+    <!-- Telemetry & System Status Indicators -->
+    <div class="flex items-center gap-4 text-xs">
+      <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-muted/60 border border-surface-border">
+        <span class="w-2 h-2 rounded-full bg-accent-emerald animate-pulse"></span>
+        <span class="text-slate-300 font-mono">Engine: Gemini 2.5 Flash / Fallback</span>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-muted/60 border border-surface-border">
+        <i data-lucide="shield" class="w-3.5 h-3.5 text-accent-cyan"></i>
+        <span class="text-slate-300 font-mono">Zero-Hallucination Active</span>
+      </div>
+      <a href="/docs" target="_blank" class="px-2.5 py-1.5 rounded-lg bg-surface-muted hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+        <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
+        <span>API Docs</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+    
+    <!-- LEFT CONTROL PANEL (Document & Profile Inputs) -->
+    <aside class="w-full lg:w-[420px] bg-surface/50 border-r border-surface-border flex flex-col p-5 overflow-y-auto shrink-0 gap-5">
+      
+      <!-- 1-CLICK DEMO BUTTON FOR JUDGES -->
+      <div class="p-4 rounded-xl bg-gradient-to-b from-accent-cyan/15 via-surface-muted to-surface border border-accent-cyan/40 glow-cyan">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-[11px] font-bold uppercase tracking-wider text-accent-cyan flex items-center gap-1.5">
+            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Judge Evaluation Shortcut
+          </span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-accent-rose/20 text-accent-rose border border-accent-rose/30">Auto-Conflict Test</span>
+        </div>
+        <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+          Executes all 5 agents on the official <strong>AICTE Circular (2 Pages)</strong> against a candidate with deliberate real-world conflicts (CGPA & Income gaps, expired certificate, missing bonafide).
+        </p>
+        <button id="btn-run-demo" class="w-full py-2.5 px-4 rounded-lg bg-gradient-to-r from-accent-cyan to-accent-indigo hover:from-sky-400 hover:to-indigo-500 text-slate-950 font-bold text-xs uppercase tracking-wide flex items-center justify-center gap-2 transition transform active:scale-98 shadow-md">
+          <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+          <span>Load Realistic Sample + Conflict Demo</span>
+        </button>
+      </div>
+
+      <!-- PDF UPLOAD ZONE -->
+      <div class="bg-surface rounded-xl border border-surface-border p-4">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+            <i data-lucide="upload-cloud" class="w-4 h-4 text-accent-cyan"></i> Ingest Circular / Notice (PDF)
+          </label>
+          <a href="/api/sample/download-pdf" download class="text-[11px] text-accent-cyan hover:underline flex items-center gap-1">
+            <i data-lucide="download" class="w-3 h-3"></i> Sample PDF
+          </a>
+        </div>
+
+        <div id="dropzone" class="border-2 border-dashed border-surface-border hover:border-accent-cyan/60 rounded-xl p-4 text-center cursor-pointer transition bg-surface-muted/30">
+          <input type="file" id="pdf-file-input" accept=".pdf" class="hidden">
+          <i data-lucide="file-text" class="w-8 h-8 text-slate-400 mx-auto mb-2"></i>
+          <p id="file-label" class="text-xs text-slate-300 font-medium">Click or drag & drop PDF here</p>
+          <p class="text-[10px] text-slate-500 mt-1">Enforces %PDF- magic-bytes, max 5 MB, max 25 pages</p>
+        </div>
+      </div>
+
+      <!-- STUDENT CANDIDATE PROFILE -->
+      <div class="bg-surface rounded-xl border border-surface-border p-4 flex flex-col gap-3">
+        <div class="flex items-center justify-between border-b border-surface-border pb-2">
+          <span class="text-xs font-semibold text-slate-200 flex items-center gap-1.5">
+            <i data-lucide="user-check" class="w-4 h-4 text-accent-indigo"></i> Student Candidate Profile
+          </span>
+          <span class="text-[10px] text-slate-400 font-mono">Cross-Audit Targets</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Student Full Name</label>
+            <input type="text" id="std-name" value="Aarav Sharma" class="w-full bg-surface-muted border border-surface-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-accent-cyan">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Email Address</label>
+            <input type="email" id="std-email" value="aarav.sharma@engg.edu" class="w-full bg-surface-muted border border-surface-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-accent-cyan">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Social Category</label>
+            <select id="std-category" class="w-full bg-surface-muted border border-surface-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-accent-cyan">
+              <option value="OBC-NCL" selected>OBC-NCL</option>
+              <option value="GENERAL">General</option>
+              <option value="SC">SC</option>
+              <option value="ST">ST</option>
+              <option value="EWS">EWS</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Current CGPA (Scale 10)</label>
+            <input type="number" step="0.1" id="std-cgpa" value="7.4" class="w-full bg-surface-muted border border-surface-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-accent-cyan">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Annual Family Income (₹)</label>
+            <input type="number" id="std-income" value="650000" class="w-full bg-surface-muted border border-surface-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-accent-cyan">
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 block mb-1">Category Certificate Date</label>
+            <input type="date" id="std-cert-date" value="2023-01-15" class="w-full bg-surface-muted border border-surface-border rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-accent-cyan">
+          </div>
+        </div>
+
+        <div>
+          <label class="text-[10px] text-slate-400 block mb-1">Available Documents in Locker</label>
+          <div class="grid grid-cols-1 gap-1 text-[11px] bg-surface-muted/50 p-2.5 rounded-lg border border-surface-border">
+            <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+              <input type="checkbox" id="doc-10" checked class="rounded bg-surface-muted border-surface-border text-accent-cyan focus:ring-0"> 10th & 12th Marksheets
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+              <input type="checkbox" id="doc-id" checked class="rounded bg-surface-muted border-surface-border text-accent-cyan focus:ring-0"> College ID Card
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+              <input type="checkbox" id="doc-obc" checked class="rounded bg-surface-muted border-surface-border text-accent-cyan focus:ring-0"> OBC-NCL Certificate (State Issued)
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-slate-300">
+              <input type="checkbox" id="doc-income" checked class="rounded bg-surface-muted border-surface-border text-accent-cyan focus:ring-0"> Family Income Certificate
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-accent-rose font-medium">
+              <input type="checkbox" id="doc-bonafide" class="rounded bg-surface-muted border-surface-border text-accent-rose focus:ring-0"> Bonafide Student Certificate (Unchecked = Missing)
+            </label>
+          </div>
+        </div>
+
+        <button id="btn-run-custom" class="w-full py-2.5 px-4 rounded-lg bg-surface-muted hover:bg-slate-700 border border-surface-border text-white font-semibold text-xs flex items-center justify-center gap-2 transition">
+          <i data-lucide="play-circle" class="w-4 h-4 text-accent-cyan"></i>
+          <span>Run Custom Verification Pipeline</span>
+        </button>
+      </div>
+
+      <!-- PROMPT PROVENANCE & ARCHITECTURE ACCORDION -->
+      <div class="mt-auto pt-2 border-t border-surface-border/50 text-[11px] text-slate-400 flex items-center justify-between">
+        <span>Prompt Provenance: <strong class="text-slate-200">XML-Sandboxed v1.2</strong></span>
+        <a href="#prompts-modal" id="btn-view-prompts" class="text-accent-cyan hover:underline flex items-center gap-1">
+          <i data-lucide="info" class="w-3 h-3"></i> View Specs
+        </a>
+      </div>
+    </aside>
+
+    <!-- RIGHT COMMAND CENTER & AGENT RESULTS -->
+    <section class="flex-1 flex flex-col overflow-y-auto bg-obsidian p-6">
+      
+      <!-- INITIAL WELCOME PLACEHOLDER -->
+      <div id="placeholder-view" class="my-auto max-w-2xl mx-auto text-center py-12 px-6">
+        <div class="w-16 h-16 rounded-2xl bg-surface-muted border border-surface-border flex items-center justify-center mx-auto mb-5 text-accent-cyan">
+          <i data-lucide="cpu" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-white mb-2">Notice2Action Autonomous Agent Ready</h2>
+        <p class="text-sm text-slate-400 mb-6 leading-relaxed">
+          Extract, deterministically ground quotes, cross-audit eligibility rules against student data, and generate zero-defect actions, calendars, and emails.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left mb-8">
+          <div class="p-3.5 rounded-xl bg-surface border border-surface-border">
+            <span class="text-accent-cyan font-mono text-xs font-bold block mb-1">01 / SECURITY</span>
+            <p class="text-[11px] text-slate-300">Magic-byte header check, control character stripping & prompt injection firewall.</p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-surface border border-surface-border">
+            <span class="text-accent-emerald font-mono text-xs font-bold block mb-1">02 / ZERO-HALLUCINATION</span>
+            <p class="text-[11px] text-slate-300">Every deadline & rule requires a verbatim quote & page # verified in Python.</p>
+          </div>
+          <div class="p-3.5 rounded-xl bg-surface border border-surface-border">
+            <span class="text-accent-rose font-mono text-xs font-bold block mb-1">03 / CONFLICT AUDIT</span>
+            <p class="text-[11px] text-slate-300">Automatic rejection risk detection for CGPA, income caps, and expired dates.</p>
+          </div>
+        </div>
+
+        <button id="btn-hero-demo" class="py-3 px-6 rounded-xl bg-gradient-to-r from-accent-cyan to-accent-indigo text-slate-950 font-bold text-sm tracking-wide inline-flex items-center gap-2 shadow-lg hover:brightness-110 transition">
+          <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+          <span>Launch Demo with Sample Circular</span>
+        </button>
+      </div>
+
+      <!-- ACTIVE AGENT EXECUTION VIEW (Hidden by default) -->
+      <div id="results-view" class="hidden flex flex-col gap-6">
+        
+        <!-- STEPPER & TELEMETRY BAR -->
+        <div class="bg-surface rounded-2xl border border-surface-border p-5">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-surface-border/70">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 id="doc-title-display" class="text-base font-bold text-white">Document Analysis</h3>
+                <span id="doc-notice-badge" class="font-mono text-[10px] px-2 py-0.5 rounded bg-surface-muted border border-surface-border text-slate-300">N2A-REF</span>
+              </div>
+              <p id="doc-org-display" class="text-xs text-slate-400 mt-0.5">Issuing Authority: Loading...</p>
+            </div>
+            
+            <!-- Grounding Meter & Total Latency -->
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 uppercase font-mono block">Grounding Accuracy</span>
+                <span id="grounding-score-display" class="text-sm font-bold font-mono text-accent-emerald">100.0% Verified</span>
+              </div>
+              <div class="h-8 w-px bg-surface-border"></div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 uppercase font-mono block">Total Latency</span>
+                <span id="total-latency-display" class="text-sm font-bold font-mono text-accent-cyan">0 ms</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5-STAGE AGENT STEPPER -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 mt-4 text-xs font-mono">
+            <div class="p-2.5 rounded-lg bg-surface-muted/60 border border-surface-border flex flex-col">
+              <span class="text-[10px] text-slate-400">Step 1: Security & Ingestion</span>
+              <span class="text-accent-emerald font-bold flex items-center gap-1 mt-1">
+                <i data-lucide="check" class="w-3 h-3"></i> Validated
+              </span>
+              <span id="lat-s1" class="text-[10px] text-slate-400 mt-1">0.0 ms</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-surface-muted/60 border border-surface-border flex flex-col">
+              <span class="text-[10px] text-slate-400">Step 2: LLM Extractor</span>
+              <span class="text-accent-cyan font-bold flex items-center gap-1 mt-1">
+                <i data-lucide="check" class="w-3 h-3"></i> XML-Sandboxed
+              </span>
+              <span id="lat-s2" class="text-[10px] text-slate-400 mt-1">0.0 ms</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-surface-muted/60 border border-surface-border flex flex-col">
+              <span class="text-[10px] text-slate-400">Step 3: Quote Verifier</span>
+              <span class="text-accent-emerald font-bold flex items-center gap-1 mt-1">
+                <i data-lucide="check" class="w-3 h-3"></i> Grounded
+              </span>
+              <span id="lat-s3" class="text-[10px] text-slate-400 mt-1">0.0 ms</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-surface-muted/60 border border-surface-border flex flex-col">
+              <span class="text-[10px] text-slate-400">Step 4: Cross Conflict Audit</span>
+              <span id="stepper-s4-badge" class="text-accent-rose font-bold flex items-center gap-1 mt-1">
+                <i data-lucide="alert-triangle" class="w-3 h-3"></i> Audited
+              </span>
+              <span id="lat-s4" class="text-[10px] text-slate-400 mt-1">0.0 ms</span>
+            </div>
+            <div class="p-2.5 rounded-lg bg-surface-muted/60 border border-surface-border flex flex-col">
+              <span class="text-[10px] text-slate-400">Step 5: Action Executor</span>
+              <span class="text-accent-indigo font-bold flex items-center gap-1 mt-1">
+                <i data-lucide="check" class="w-3 h-3"></i> Ready
+              </span>
+              <span id="lat-s5" class="text-[10px] text-slate-400 mt-1">0.0 ms</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ELIGIBILITY STATUS & SECURITY SHIELD BANNER -->
+        <div id="eligibility-banner" class="rounded-2xl border p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-4">
+            <div id="eligibility-icon-wrap" class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
+              <i id="eligibility-icon" data-lucide="alert-octagon" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="eligibility-status-badge" class="text-sm font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full font-mono">INELIGIBLE</span>
+                <span id="risk-score-badge" class="text-xs font-mono text-slate-300">Risk Score: 80/100</span>
+              </div>
+              <p id="eligibility-summary-text" class="text-xs text-slate-300 mt-1 leading-relaxed">Cross-audit summary loading...</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 shrink-0">
+            <span id="shield-badge" class="px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 border">
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span>Shield: Clean</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- 4 INTERACTIVE TABS -->
+        <div class="flex flex-col gap-4">
+          <!-- Tab Navigation Bar -->
+          <div class="flex items-center gap-2 border-b border-surface-border pb-1 overflow-x-auto text-xs font-medium">
+            <button class="tab-btn active px-4 py-2 rounded-t-lg border-b-2 border-accent-cyan text-accent-cyan flex items-center gap-2 font-semibold" data-target="tab-actions">
+              <i data-lucide="check-square" class="w-4 h-4"></i> Action Plan & Calendar
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2" data-target="tab-quotes">
+              <i data-lucide="quote" class="w-4 h-4"></i> Quote & Evidence Audit
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2" data-target="tab-conflicts">
+              <i data-lucide="git-pull-request-closed" class="w-4 h-4"></i> Conflicts & Security Log
+            </button>
+            <button class="tab-btn px-4 py-2 rounded-t-lg border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-2" data-target="tab-email">
+              <i data-lucide="mail" class="w-4 h-4"></i> Draft Email & Raw JSON
+            </button>
+          </div>
+
+          <!-- TAB 1: ACTION PLAN & CALENDAR -->
+          <div id="tab-actions" class="tab-content flex flex-col gap-5">
+            <!-- Top Controls for Action Plan -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-surface p-4 rounded-xl border border-surface-border">
+              <div class="flex items-center gap-3">
+                <button id="btn-download-ics" class="px-3.5 py-2 rounded-lg bg-accent-cyan/15 hover:bg-accent-cyan/25 border border-accent-cyan/40 text-accent-cyan font-semibold text-xs flex items-center gap-2 transition">
+                  <i data-lucide="calendar" class="w-4 h-4"></i>
+                  <span>Download .ICS Calendar File</span>
+                </button>
+                <span class="text-[11px] text-slate-400">Import with alarms into Google, Apple, or Outlook</span>
+              </div>
+
+              <!-- Bilingual Toggle Switch -->
+              <div class="flex items-center gap-1 bg-surface-muted p-1 rounded-lg border border-surface-border text-xs">
+                <button id="btn-lang-en" class="px-3 py-1 rounded-md bg-accent-cyan text-slate-950 font-bold transition">English</button>
+                <button id="btn-lang-hi" class="px-3 py-1 rounded-md text-slate-300 hover:text-white transition">Hindi / Hinglish</button>
+              </div>
+            </div>
+
+            <!-- Executive / Bilingual Brief Card -->
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <i data-lucide="file-text" class="w-4 h-4 text-accent-cyan"></i> Executive Briefing
+                </h4>
+                <span id="lang-indicator" class="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-muted text-accent-cyan">Language: English</span>
+              </div>
+              <div id="briefing-content" class="text-xs text-slate-300 leading-relaxed space-y-2 whitespace-pre-line font-sans">
+                Loading executive summary...
+              </div>
+            </div>
+
+            <!-- Prioritized Action Checklist -->
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <i data-lucide="list-checks" class="w-4 h-4 text-accent-emerald"></i> Prioritized Action Checklist
+                </h4>
+                <span id="checklist-count" class="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-muted text-slate-300">0 Items</span>
+              </div>
+              <div id="action-checklist-container" class="space-y-2.5">
+                <!-- Checklist items injected via JS -->
+              </div>
+            </div>
+
+            <!-- Deadlines Timeline Grid -->
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-4">
+                <i data-lucide="clock" class="w-4 h-4 text-accent-cyan"></i> Critical Timeline & Milestones
+              </h4>
+              <div id="deadlines-container" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- Deadlines injected via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: QUOTE & EVIDENCE AUDIT (Zero Hallucination) -->
+          <div id="tab-quotes" class="tab-content hidden flex flex-col gap-4">
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-accent-emerald"></i> Deterministic Quote Grounding Audit
+                  </h4>
+                  <p class="text-[11px] text-slate-400 mt-1">
+                    Every extracted claim is cross-checked against page-indexed source text in Python. Claims with match score &lt; 85% are automatically quarantined.
+                  </p>
+                </div>
+                <div class="text-right">
+                  <span class="text-[10px] text-slate-400 uppercase font-mono block">Audited Claims</span>
+                  <span id="audit-stat-counts" class="text-xs font-bold font-mono text-slate-200">0 Verified / 0 Total</span>
+                </div>
+              </div>
+
+              <!-- Quotes Table -->
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-surface-muted text-slate-400 uppercase text-[10px] font-mono border-b border-surface-border">
+                    <tr>
+                      <th class="py-2.5 px-3">Item / Claim</th>
+                      <th class="py-2.5 px-3">Verbatim Source Quote</th>
+                      <th class="py-2.5 px-3 text-center">Page</th>
+                      <th class="py-2.5 px-3 text-center">Match</th>
+                      <th class="py-2.5 px-3 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="quotes-table-body" class="divide-y divide-surface-border/50 text-slate-300">
+                    <!-- Injected rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: CONFLICTS & SECURITY LOG -->
+          <div id="tab-conflicts" class="tab-content hidden flex flex-col gap-5">
+            <!-- Conflict Cards -->
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <i data-lucide="alert-triangle" class="w-4 h-4 text-accent-rose"></i> Detected Cross-Audit Conflicts & Rejection Risks
+                </h4>
+                <span id="conflicts-count-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-accent-rose/20 text-accent-rose border border-accent-rose/30">0 Conflicts</span>
+              </div>
+              <div id="conflicts-container" class="space-y-3">
+                <!-- Conflicts injected via JS -->
+              </div>
+            </div>
+
+            <!-- Security Shield & Injection Log -->
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2 mb-4">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-accent-cyan"></i> Security Shield & Injection Firewall Log
+              </h4>
+              <div id="security-log-content" class="space-y-3 text-xs">
+                <!-- Security logs injected via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: DRAFT EMAIL & RAW JSON -->
+          <div id="tab-email" class="tab-content hidden flex flex-col gap-5">
+            <!-- Clarification Email Card -->
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <i data-lucide="mail-check" class="w-4 h-4 text-accent-indigo"></i> Formal Clarification Email Draft
+                </h4>
+                <button id="btn-copy-email" class="px-3 py-1.5 rounded-lg bg-surface-muted hover:bg-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 transition">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span id="copy-email-text">Copy Email Draft</span>
+                </button>
+              </div>
+              <pre id="email-draft-content" class="bg-surface-muted p-4 rounded-xl text-xs font-mono text-slate-300 whitespace-pre-wrap overflow-x-auto border border-surface-border leading-relaxed"></pre>
+            </div>
+
+            <!-- Raw JSON Inspector -->
+            <div class="bg-surface rounded-xl border border-surface-border p-5">
+              <div class="flex items-center justify-between mb-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <i data-lucide="code" class="w-4 h-4 text-accent-cyan"></i> Raw Structured JSON Pipeline Output
+                </h4>
+                <button id="btn-copy-json" class="px-3 py-1.5 rounded-lg bg-surface-muted hover:bg-slate-700 text-slate-300 hover:text-white text-xs flex items-center gap-1.5 transition">
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                  <span id="copy-json-text">Copy JSON</span>
+                </button>
+              </div>
+              <pre id="raw-json-content" class="bg-surface-muted p-4 rounded-xl text-[11px] font-mono text-accent-cyan/90 max-h-96 overflow-y-auto border border-surface-border leading-tight"></pre>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- PROMPT SPECIFICATIONS MODAL -->
+  <div id="prompts-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-surface border border-surface-border rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="px-6 py-4 border-b border-surface-border flex items-center justify-between">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i data-lucide="book-open" class="w-4 h-4 text-accent-cyan"></i> Notice2Action Agent Architecture & Prompt Specs
+        </h3>
+        <button id="btn-close-modal" class="text-slate-400 hover:text-white">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 overflow-y-auto text-xs text-slate-300 space-y-4">
+        <div>
+          <h4 class="font-bold text-accent-cyan mb-1">1. XML Sandboxing Defense</h4>
+          <p class="text-slate-400">All document text is sanitized of control characters and wrapped inside strict <code>&lt;untrusted_document_content&gt;</code> tags. The model is primed with passive-data rules preventing prompt injection and role hijacking.</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-accent-emerald mb-1">2. Mandatory Verbatim Quote Grounding</h4>
+          <p class="text-slate-400">Extracted deadlines and rules must cite an exact <code>verbatim_quote</code> and 1-indexed <code>page_number</code>, which is verified programmatically by the Step 3 Deterministic Verifier.</p>
+        </div>
+        <div>
+          <h4 class="font-bold text-accent-rose mb-1">3. Automated Cross-Document Conflict Audit</h4>
+          <p class="text-slate-400">The Step 4 auditor scans for CGPA thresholds, income caps, expired caste certificates, and missing attachments to prevent rejection before portal submission.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC SCRIPT -->
+  <script>
+    // State management
+    let currentResponse = null;
+    let selectedLanguage = 'en';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      setupTabs();
+      setupEventListeners();
+    });
+
+    function setupTabs() {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          tabBtns.forEach(b => {
+            b.classList.remove('active', 'border-accent-cyan', 'text-accent-cyan', 'font-semibold');
+            b.classList.add('border-transparent', 'text-slate-400');
+          });
+          btn.classList.add('active', 'border-accent-cyan', 'text-accent-cyan', 'font-semibold');
+          btn.classList.remove('border-transparent', 'text-slate-400');
+
+          const targetId = btn.getAttribute('data-target');
+          document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+          const targetContent = document.getElementById(targetId);
+          if (targetContent) targetContent.classList.remove('hidden');
+        });
+      });
+    }
+
+    function setupEventListeners() {
+      // 1-Click Demo Button
+      document.getElementById('btn-run-demo').addEventListener('click', runDemo);
+      document.getElementById('btn-hero-demo').addEventListener('click', runDemo);
+
+      // Custom File Upload Trigger
+      const dropzone = document.getElementById('dropzone');
+      const fileInput = document.getElementById('pdf-file-input');
+
+      dropzone.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          document.getElementById('file-label').textContent = e.target.files[0].name;
+        }
+      });
+
+      // Run Custom Form
+      document.getElementById('btn-run-custom').addEventListener('click', runCustomPipeline);
+
+      // Language Toggle
+      document.getElementById('btn-lang-en').addEventListener('click', () => switchLanguage('en'));
+      document.getElementById('btn-lang-hi').addEventListener('click', () => switchLanguage('hi'));
+
+      // Download .ICS
+      document.getElementById('btn-download-ics').addEventListener('click', () => {
+        if (!currentResponse || !currentResponse.calendar_ics) return;
+        const blob = new Blob([currentResponse.calendar_ics], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Notice2Action_${currentResponse.notice_id}.ics`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+
+      // Copy Email
+      document.getElementById('btn-copy-email').addEventListener('click', () => {
+        if (!currentResponse) return;
+        navigator.clipboard.writeText(currentResponse.clarification_email_draft);
+        const txt = document.getElementById('copy-email-text');
+        txt.textContent = 'Copied!';
+        setTimeout(() => txt.textContent = 'Copy Email Draft', 2000);
+      });
+
+      // Copy JSON
+      document.getElementById('btn-copy-json').addEventListener('click', () => {
+        if (!currentResponse) return;
+        navigator.clipboard.writeText(JSON.stringify(currentResponse, null, 2));
+        const txt = document.getElementById('copy-json-text');
+        txt.textContent = 'Copied!';
+        setTimeout(() => txt.textContent = 'Copy JSON', 2000);
+      });
+
+      // Modal Toggles
+      document.getElementById('btn-view-prompts').addEventListener('click', (e) => {
+        e.preventDefault();
+        document.getElementById('prompts-modal').classList.remove('hidden');
+      });
+      document.getElementById('btn-close-modal').addEventListener('click', () => {
+        document.getElementById('prompts-modal').classList.add('hidden');
+      });
+    }
+
+    async function runDemo() {
+      setLoadingState(true, 'Running 5-Stage Agent Pipeline on AICTE Circular...');
+      try {
+        const res = await fetch('/api/demo-conflict');
+        if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+        const data = await res.json();
+        renderResults(data);
+      } catch (err) {
+        alert('Pipeline execution error: ' + err.message);
+      } finally {
+        setLoadingState(false);
+      }
+    }
+
+    async function runCustomPipeline() {
+      const fileInput = document.getElementById('pdf-file-input');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select or upload a PDF file first, or click "Load Realistic Sample + Conflict Demo"!');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const studentProfile = collectStudentProfileFromUI();
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('student_profile', JSON.stringify(studentProfile));
+
+      setLoadingState(true, 'Analyzing uploaded document with 5-stage agent...');
+      try {
+        const res = await fetch('/api/process', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.detail || 'Pipeline execution failed');
+        }
+        const data = await res.json();
+        renderResults(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        setLoadingState(false);
+      }
+    }
+
+    function collectStudentProfileFromUI() {
+      const docs = [];
+      if (document.getElementById('doc-10').checked) { docs.push('10th Marksheet'); docs.push('12th Marksheet'); }
+      if (document.getElementById('doc-id').checked) docs.push('College ID Card');
+      if (document.getElementById('doc-obc').checked) docs.push('OBC-NCL Certificate');
+      if (document.getElementById('doc-income').checked) docs.push('Income Certificate');
+      if (document.getElementById('doc-bonafide').checked) docs.push('Bonafide Student Certificate');
+
+      return {
+        name: document.getElementById('std-name').value,
+        email: document.getElementById('std-email').value,
+        category: document.getElementById('std-category').value,
+        annual_income_inr: parseFloat(document.getElementById('std-income').value) || 600000.0,
+        cgpa: parseFloat(document.getElementById('std-cgpa').value) || 7.5,
+        percentage: (parseFloat(document.getElementById('std-cgpa').value) || 7.5) * 10.0,
+        degree: 'B.Tech Computer Science',
+        year_of_study: 3,
+        certificate_issue_date: document.getElementById('std-cert-date').value || '2023-01-15',
+        available_documents: docs
+      };
+    }
+
+    function setLoadingState(isLoading, msg = '') {
+      const demoBtn = document.getElementById('btn-run-demo');
+      const customBtn = document.getElementById('btn-run-custom');
+      if (isLoading) {
+        demoBtn.disabled = true;
+        customBtn.disabled = true;
+        demoBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      } else {
+        demoBtn.disabled = false;
+        customBtn.disabled = false;
+        demoBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      }
+    }
+
+    function renderResults(data) {
+      currentResponse = data;
+
+      // Reveal Results View, Hide Placeholder
+      document.getElementById('placeholder-view').classList.add('hidden');
+      document.getElementById('results-view').classList.remove('hidden');
+
+      // Top Title & Badges
+      document.getElementById('doc-title-display').textContent = data.extraction.metadata.title;
+      document.getElementById('doc-notice-badge').textContent = data.notice_id;
+      document.getElementById('doc-org-display').textContent = `Issuing Authority: ${data.extraction.metadata.issuing_organization}`;
+
+      // Grounding & Latency
+      document.getElementById('grounding-score-display').textContent = `${data.grounding_report.grounding_accuracy_score}% Grounded`;
+      document.getElementById('total-latency-display').textContent = `${data.telemetry.total_latency_ms} ms`;
+
+      // Stepper Latencies
+      const lats = data.telemetry.step_latencies_ms;
+      document.getElementById('lat-s1').textContent = `${lats.step_1_ingestion_and_security_ms || 0} ms`;
+      document.getElementById('lat-s2').textContent = `${lats.step_2_structured_extraction_ms || 0} ms`;
+      document.getElementById('lat-s3').textContent = `${lats.step_3_grounding_audit_ms || 0} ms`;
+      document.getElementById('lat-s4').textContent = `${lats.step_4_cross_conflict_audit_ms || 0} ms`;
+      document.getElementById('lat-s5').textContent = `${lats.step_5_action_executor_ms || 0} ms`;
+
+      // Eligibility Banner Styling
+      const banner = document.getElementById('eligibility-banner');
+      const statusBadge = document.getElementById('eligibility-status-badge');
+      const iconWrap = document.getElementById('eligibility-icon-wrap');
+      const status = data.cross_audit.eligibility_status;
+
+      if (status === 'ELIGIBLE') {
+        banner.className = 'rounded-2xl border p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-accent-emerald/10 border-accent-emerald/40 glow-emerald';
+        statusBadge.className = 'text-sm font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full font-mono bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/40';
+        iconWrap.className = 'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent-emerald/20 text-accent-emerald';
+      } else if (status === 'CONDITIONALLY ELIGIBLE') {
+        banner.className = 'rounded-2xl border p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-accent-amber/10 border-accent-amber/40';
+        statusBadge.className = 'text-sm font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full font-mono bg-accent-amber/20 text-accent-amber border border-accent-amber/40';
+        iconWrap.className = 'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent-amber/20 text-accent-amber';
+      } else {
+        banner.className = 'rounded-2xl border p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-accent-rose/10 border-accent-rose/40 glow-rose';
+        statusBadge.className = 'text-sm font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full font-mono bg-accent-rose/20 text-accent-rose border border-accent-rose/40';
+        iconWrap.className = 'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent-rose/20 text-accent-rose';
+      }
+
+      statusBadge.textContent = status;
+      document.getElementById('risk-score-badge').textContent = `Rejection Risk Score: ${data.cross_audit.risk_score}/100`;
+      document.getElementById('eligibility-summary-text').textContent = data.cross_audit.summary;
+
+      // Security Shield Badge
+      const shield = data.security_shield;
+      const shieldBadge = document.getElementById('shield-badge');
+      if (shield.prompt_injection_detected) {
+        shieldBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 border bg-accent-rose/20 text-accent-rose border-accent-rose/40';
+        shieldBadge.innerHTML = `<i data-lucide="shield-alert" class="w-4 h-4"></i> Shield: Injections Quarantined (${shield.injection_threat_level})`;
+      } else {
+        shieldBadge.className = 'px-3 py-1.5 rounded-lg text-xs font-mono flex items-center gap-1.5 border bg-accent-emerald/20 text-accent-emerald border-accent-emerald/40';
+        shieldBadge.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4"></i> Shield: Clean (%PDF- Valid, ${shield.total_pages} Pages)`;
+      }
+
+      // Render Tab Contents
+      renderActionPlan(data);
+      renderQuotesAudit(data);
+      renderConflicts(data);
+      renderEmailAndJson(data);
+
+      lucide.createIcons();
+    }
+
+    function switchLanguage(lang) {
+      selectedLanguage = lang;
+      const btnEn = document.getElementById('btn-lang-en');
+      const btnHi = document.getElementById('btn-lang-hi');
+      const indicator = document.getElementById('lang-indicator');
+      const content = document.getElementById('briefing-content');
+
+      if (!currentResponse) return;
+
+      if (lang === 'en') {
+        btnEn.className = 'px-3 py-1 rounded-md bg-accent-cyan text-slate-950 font-bold transition';
+        btnHi.className = 'px-3 py-1 rounded-md text-slate-300 hover:text-white transition';
+        indicator.textContent = 'Language: English';
+        content.textContent = currentResponse.bilingual_summary.english;
+      } else {
+        btnHi.className = 'px-3 py-1 rounded-md bg-accent-cyan text-slate-950 font-bold transition';
+        btnEn.className = 'px-3 py-1 rounded-md text-slate-300 hover:text-white transition';
+        indicator.textContent = 'Language: Hindi / Hinglish';
+        content.textContent = currentResponse.bilingual_summary.hindi_hinglish;
+      }
+    }
+
+    function renderActionPlan(data) {
+      switchLanguage(selectedLanguage);
+
+      // Checklist
+      const container = document.getElementById('action-checklist-container');
+      container.innerHTML = '';
+      document.getElementById('checklist-count').textContent = `${data.action_items.length} Items`;
+
+      data.action_items.forEach((item, idx) => {
+        const isP1 = item.priority.startsWith('P1');
+        const badgeColor = isP1 ? 'bg-accent-rose/20 text-accent-rose border-accent-rose/40' : (item.priority.startsWith('P2') ? 'bg-accent-amber/20 text-accent-amber border-accent-amber/40' : 'bg-surface-muted text-slate-300 border-surface-border');
+
+        const div = document.createElement('div');
+        div.className = 'p-3 rounded-lg bg-surface-muted/60 border border-surface-border flex items-start justify-between gap-3 hover:border-slate-600 transition';
+        div.innerHTML = `
+          <div class="flex items-start gap-3">
+            <input type="checkbox" id="chk-${idx}" class="mt-0.5 rounded bg-surface border-surface-border text-accent-cyan focus:ring-0 cursor-pointer">
+            <div>
+              <label for="chk-${idx}" class="text-xs font-medium text-slate-200 cursor-pointer block">${item.action}</label>
+              <div class="flex items-center gap-3 mt-1.5 text-[10px] text-slate-400">
+                <span>Assignee: <strong class="text-slate-300">${item.assigned_to}</strong></span>
+                <span>•</span>
+                <span>Category: <strong class="text-slate-300">${item.category}</strong></span>
+                <span>•</span>
+                <span>Due: <strong class="text-accent-cyan">${item.deadline}</strong></span>
+              </div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded border ${badgeColor} shrink-0">${item.priority}</span>
+        `;
+        container.appendChild(div);
+      });
+
+      // Deadlines Grid
+      const deadGrid = document.getElementById('deadlines-container');
+      deadGrid.innerHTML = '';
+      data.extraction.deadlines.forEach(d => {
+        const card = document.createElement('div');
+        card.className = 'p-3.5 rounded-lg bg-surface-muted/50 border border-surface-border flex flex-col justify-between';
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-2">
+            <span class="font-bold text-xs text-slate-200">${d.title}</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded ${d.urgency === 'CRITICAL' ? 'bg-accent-rose/20 text-accent-rose' : 'bg-accent-cyan/15 text-accent-cyan'}">${d.urgency}</span>
+          </div>
+          <p class="text-sm font-bold font-mono text-white mb-1">${d.date_str}</p>
+          <p class="text-[11px] text-slate-400 mb-2">${d.action_required}</p>
+          <div class="text-[10px] font-mono text-slate-500 italic border-t border-surface-border/50 pt-1.5 flex items-center justify-between">
+            <span>"${d.verbatim_quote.substring(0, 45)}..."</span>
+            <span class="text-accent-cyan">Pg ${d.page_number}</span>
+          </div>
+        `;
+        deadGrid.appendChild(card);
+      });
+    }
+
+    function renderQuotesAudit(data) {
+      const rep = data.grounding_report;
+      document.getElementById('audit-stat-counts').textContent = `${rep.verified_claims} Verified / ${rep.total_claims} Total (${rep.quarantined_claims} Quarantined)`;
+
+      const tbody = document.getElementById('quotes-table-body');
+      tbody.innerHTML = '';
+
+      rep.audited_items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = item.is_verified ? 'hover:bg-surface-muted/30' : 'bg-accent-rose/5 hover:bg-accent-rose/10';
+        tr.innerHTML = `
+          <td class="py-3 px-3 font-medium text-slate-200 max-w-xs">
+            <span class="text-[10px] font-mono text-slate-400 block">${item.item_id} [${item.item_type}]</span>
+            <span>${item.claim_text}</span>
+          </td>
+          <td class="py-3 px-3 italic font-mono text-[11px] text-slate-300 max-w-sm">
+            "${item.verbatim_quote}"
+            ${item.quarantine_reason ? `<span class="text-[10px] text-accent-rose block not-italic mt-1">⚠️ ${item.quarantine_reason}</span>` : ''}
+          </td>
+          <td class="py-3 px-3 text-center font-mono text-accent-cyan">Pg ${item.page_number}</td>
+          <td class="py-3 px-3 text-center font-mono text-[11px] text-slate-300">${Math.round(item.match_score * 100)}% (${item.match_type})</td>
+          <td class="py-3 px-3 text-right">
+            ${item.is_verified 
+              ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-accent-emerald/20 text-accent-emerald border border-accent-emerald/40"><i data-lucide="check" class="w-3 h-3"></i> Verified</span>`
+              : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono bg-accent-rose/20 text-accent-rose border border-accent-rose/40"><i data-lucide="alert-octagon" class="w-3 h-3"></i> Quarantined</span>`
+            }
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderConflicts(data) {
+      const conflicts = data.cross_audit.conflicts;
+      document.getElementById('conflicts-count-badge').textContent = `${conflicts.length} Rejection Risks`;
+      const container = document.getElementById('conflicts-container');
+      container.innerHTML = '';
+
+      if (conflicts.length === 0) {
+        container.innerHTML = `
+          <div class="p-4 rounded-xl bg-accent-emerald/10 border border-accent-emerald/30 text-accent-emerald text-xs flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
+            <span>No conflicts detected! Applicant satisfies all extracted circular requirements.</span>
+          </div>
+        `;
+      } else {
+        conflicts.forEach(c => {
+          const card = document.createElement('div');
+          card.className = 'p-4 rounded-xl bg-surface-muted/60 border border-surface-border flex flex-col gap-2.5';
+          card.innerHTML = `
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-white flex items-center gap-2">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-accent-rose"></i>
+                <span>${c.field}</span>
+              </span>
+              <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-accent-rose/20 text-accent-rose border border-accent-rose/30 font-bold">${c.severity} RISK</span>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] bg-surface p-2.5 rounded-lg border border-surface-border/50 font-mono">
+              <div><span class="text-slate-400">Notice Requirement:</span> <strong class="text-accent-cyan">${c.rule_text}</strong></div>
+              <div><span class="text-slate-400">Student Record:</span> <strong class="text-accent-rose">${c.student_value}</strong></div>
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed">
+              <strong class="text-accent-rose">Rejection Ground:</strong> ${c.rejection_risk}
+            </p>
+
+            <div class="text-[11px] text-accent-emerald bg-accent-emerald/5 p-2 rounded border border-accent-emerald/20 flex items-start gap-1.5">
+              <i data-lucide="arrow-right-circle" class="w-3.5 h-3.5 mt-0.5 shrink-0"></i>
+              <span><strong>Actionable Remedy:</strong> ${c.recommended_remedy}</span>
+            </div>
+
+            <div class="text-[10px] text-slate-500 font-mono italic">
+              Evidence Quote: "${c.evidence_quote}"
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      // Security Shield Log
+      const secLog = document.getElementById('security-log-content');
+      const sh = data.security_shield;
+      secLog.innerHTML = `
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px]">
+          <div class="p-2.5 rounded bg-surface-muted border border-surface-border">
+            <span class="text-slate-400 block text-[10px]">Magic Bytes Header</span>
+            <span class="text-accent-emerald font-bold">${sh.magic_bytes_valid ? '%PDF- VALID' : 'INVALID'}</span>
+          </div>
+          <div class="p-2.5 rounded bg-surface-muted border border-surface-border">
+            <span class="text-slate-400 block text-[10px]">Total Document Pages</span>
+            <span class="text-slate-200 font-bold">${sh.total_pages} Pages</span>
+          </div>
+          <div class="p-2.5 rounded bg-surface-muted border border-surface-border">
+            <span class="text-slate-400 block text-[10px]">Sanitized Control Chars</span>
+            <span class="text-slate-200 font-bold">${sh.sanitized_chars_count} Chars</span>
+          </div>
+          <div class="p-2.5 rounded bg-surface-muted border border-surface-border">
+            <span class="text-slate-400 block text-[10px]">Prompt Injection Shield</span>
+            <span class="${sh.prompt_injection_detected ? 'text-accent-rose' : 'text-accent-emerald'} font-bold">
+              ${sh.prompt_injection_detected ? `THREAT: ${sh.injection_threat_level}` : 'CLEAN / SHIELDED'}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderEmailAndJson(data) {
+      document.getElementById('email-draft-content').textContent = data.clarification_email_draft;
+      document.getElementById('raw-json-content').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
