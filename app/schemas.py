@@ -1,23 +1,23 @@
-"""Data contracts and Pydantic schemas for the Notice2Action agentic pipeline."""
+"""Typed contracts for Notice2Action's deterministic analysis workflow."""
 
 from __future__ import annotations
-from typing import List, Optional, Dict, Any, Literal
+
+from typing import Dict, List, Literal, Optional
+
 from pydantic import BaseModel, Field
 
 
-# --- Security & Ingestion Schemas ---
-
 class SecurityShieldReport(BaseModel):
-    magic_bytes_valid: bool = Field(..., description="True if valid %PDF- magic bytes detected")
-    detected_mime_type: str = Field(default="application/pdf")
-    file_size_bytes: int = Field(..., description="Size of file in bytes")
-    total_pages: int = Field(..., description="Total pages in the PDF document")
-    sanitization_applied: bool = Field(default=False)
-    sanitized_chars_count: int = Field(default=0)
-    prompt_injection_detected: bool = Field(default=False)
-    injection_threat_level: Literal["NONE", "LOW", "MEDIUM", "CRITICAL"] = Field(default="NONE")
+    magic_bytes_valid: bool
+    detected_mime_type: str = "application/pdf"
+    file_size_bytes: int
+    total_pages: int
+    sanitization_applied: bool = False
+    sanitized_chars_count: int = 0
+    prompt_injection_detected: bool = False
+    injection_threat_level: Literal["NONE", "LOW", "MEDIUM", "HIGH", "CRITICAL"] = "NONE"
     quarantined_snippets: List[str] = Field(default_factory=list)
-    security_verdict: Literal["CLEAN", "SUSPICIOUS", "BLOCKED"] = Field(default="CLEAN")
+    security_verdict: Literal["CLEAN", "SUSPICIOUS", "BLOCKED"] = "CLEAN"
 
 
 class PageIndexedText(BaseModel):
@@ -26,50 +26,48 @@ class PageIndexedText(BaseModel):
     char_count: int
 
 
-# --- Step 2: Extraction Schemas ---
-
 class DeadlineItem(BaseModel):
-    title: str = Field(..., description="Name/purpose of deadline (e.g. Application Close)")
-    date_str: str = Field(..., description="Date text as presented in notice")
-    iso_date: Optional[str] = Field(None, description="Normalized ISO 8601 date (YYYY-MM-DD) if parseable")
-    verbatim_quote: str = Field(..., description="Exact textual excerpt from document supporting this deadline")
-    page_number: int = Field(..., description="1-indexed page number where quote resides")
-    urgency: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"] = Field(default="HIGH")
-    action_required: str = Field(..., description="Action to complete before this deadline")
+    title: str
+    date_str: str
+    iso_date: Optional[str] = None
+    verbatim_quote: str
+    page_number: int
+    urgency: Literal["CRITICAL", "HIGH", "MEDIUM", "LOW"] = "HIGH"
+    action_required: str
 
 
 class EligibilityCriteriaItem(BaseModel):
-    criterion_name: str = Field(..., description="Criterion name, e.g. CGPA, Income, Category")
-    condition: str = Field(..., description="Comparison operator or rule e.g. '>= 8.0', '<= 600000'")
-    threshold_value: str = Field(..., description="Raw threshold stated in circular")
-    applicable_category: Optional[str] = Field("ALL", description="Target category e.g. GENERAL, OBC, SC, ST, EWS")
-    verbatim_quote: str = Field(..., description="Exact textual excerpt from document supporting this rule")
-    page_number: int = Field(..., description="1-indexed page number")
+    criterion_name: str
+    condition: str
+    threshold_value: str
+    applicable_category: Optional[str] = "ALL"
+    verbatim_quote: str
+    page_number: int
 
 
 class RequiredDocumentItem(BaseModel):
-    document_name: str = Field(..., description="Document title e.g. Income Certificate, Marksheet")
-    issuing_authority: Optional[str] = Field(None, description="Required issuing body e.g. Tehsildar, Sub-Divisional Magistrate")
-    validity_rule: Optional[str] = Field(None, description="Validity constraint e.g. Issued on or after April 1, 2024")
-    is_mandatory: bool = Field(default=True)
-    verbatim_quote: str = Field(..., description="Exact textual excerpt from document")
-    page_number: int = Field(..., description="1-indexed page number")
+    document_name: str
+    issuing_authority: Optional[str] = None
+    validity_rule: Optional[str] = None
+    is_mandatory: bool = True
+    verbatim_quote: str
+    page_number: int
 
 
 class FeeDetails(BaseModel):
-    amount_inr: Optional[float] = Field(None, description="Application or registration fee")
-    payment_mode: Optional[str] = Field(None, description="Online portal, Demand Draft, NEFT")
+    amount_inr: Optional[float] = None
+    payment_mode: Optional[str] = None
     exemption_categories: List[str] = Field(default_factory=list)
-    verbatim_quote: Optional[str] = Field(None)
-    page_number: Optional[int] = Field(None)
+    verbatim_quote: Optional[str] = None
+    page_number: Optional[int] = None
 
 
 class NoticeMetadata(BaseModel):
-    title: str = Field(..., description="Title of the notice or circular")
-    issuing_organization: str = Field(..., description="Issuing University/Ministry/Authority")
-    notice_number: Optional[str] = Field(None, description="Official reference number/memo ID")
-    issue_date: Optional[str] = Field(None, description="Notice issue date")
-    scheme_category: str = Field(default="Scholarship / Academic Grant")
+    title: str
+    issuing_organization: str
+    notice_number: Optional[str] = None
+    issue_date: Optional[str] = None
+    scheme_category: str = "Academic / public notice"
 
 
 class StructuredNoticeExtraction(BaseModel):
@@ -81,10 +79,8 @@ class StructuredNoticeExtraction(BaseModel):
     contact_email: Optional[str] = None
     contact_phone: Optional[str] = None
     portal_url: Optional[str] = None
-    official_summary: str = Field(..., description="Executive summary of the circular")
+    official_summary: str
 
-
-# --- Step 3: Grounding & Verification Schemas ---
 
 class GroundingAuditItem(BaseModel):
     item_id: str
@@ -93,7 +89,7 @@ class GroundingAuditItem(BaseModel):
     verbatim_quote: str
     page_number: int
     is_verified: bool
-    match_score: float = Field(..., description="Match confidence score between 0.0 and 1.0")
+    match_score: float
     match_type: Literal["EXACT", "FUZZY_HIGH", "FUZZY_PARTIAL", "FAILED"]
     quarantined: bool
     quarantine_reason: Optional[str] = None
@@ -103,54 +99,42 @@ class GroundingReport(BaseModel):
     total_claims: int
     verified_claims: int
     quarantined_claims: int
-    grounding_accuracy_score: float = Field(..., description="Percentage of verified quotes (0 - 100%)")
+    grounding_accuracy_score: float
     audited_items: List[GroundingAuditItem] = Field(default_factory=list)
 
 
-# --- Step 4: Student Profile & Cross-Document Audit Schemas ---
-
 class StudentProfile(BaseModel):
-    name: str = Field(default="Aarav Sharma")
-    email: str = Field(default="aarav.sharma@example.edu")
-    category: str = Field(default="OBC-NCL")
-    annual_income_inr: float = Field(default=650000.0, description="Annual household income in INR")
-    cgpa: float = Field(default=7.4, description="Student's current CGPA (out of 10.0)")
-    percentage: Optional[float] = Field(default=74.0, description="Equivalent percentage")
-    degree: str = Field(default="B.Tech Computer Science")
-    year_of_study: int = Field(default=3)
-    certificate_issue_date: Optional[str] = Field(default="2023-01-15", description="Income/Caste Certificate date (YYYY-MM-DD)")
-    available_documents: List[str] = Field(
-        default_factory=lambda: [
-            "10th Marksheet",
-            "12th Marksheet",
-            "College ID Card",
-            "OBC-NCL Certificate",
-            "Income Certificate"
-        ]
-    )
+    name: str = "Applicant"
+    email: str = "applicant@example.edu"
+    category: str = "GENERAL"
+    annual_income_inr: Optional[float] = Field(default=None, ge=0)
+    cgpa: Optional[float] = Field(default=None, ge=0, le=10)
+    percentage: Optional[float] = Field(default=None, ge=0, le=100)
+    degree: str = "Not provided"
+    year_of_study: Optional[int] = None
+    certificate_issue_date: Optional[str] = None
+    available_documents: List[str] = Field(default_factory=list)
 
 
 class ConflictAuditItem(BaseModel):
-    field: str = Field(..., description="Field inspected e.g. CGPA, Annual Income, Certificate Date")
-    rule_text: str = Field(..., description="Verified rule from notice")
-    student_value: str = Field(..., description="Student's actual data")
-    threshold_value: str = Field(..., description="Threshold requirement")
-    has_conflict: bool = Field(..., description="True if requirement is violated")
-    severity: Literal["CRITICAL", "HIGH", "MEDIUM", "INFO"] = Field(...)
-    rejection_risk: str = Field(..., description="Explanation of why application risks rejection")
-    evidence_quote: str = Field(..., description="Document quote establishing the rule")
-    recommended_remedy: str = Field(..., description="Actionable step to resolve or bypass")
+    field: str
+    rule_text: str
+    student_value: str
+    threshold_value: str
+    has_conflict: bool
+    severity: Literal["CRITICAL", "HIGH", "MEDIUM", "INFO"]
+    rejection_risk: str
+    evidence_quote: str
+    recommended_remedy: str
 
 
 class CrossAuditResult(BaseModel):
     eligibility_status: Literal["ELIGIBLE", "CONDITIONALLY ELIGIBLE", "INELIGIBLE"]
-    risk_score: int = Field(..., description="Risk score from 0 (lowest) to 100 (highest risk)")
+    risk_score: int = Field(ge=0, le=100)
     summary: str
     conflicts: List[ConflictAuditItem] = Field(default_factory=list)
     eligible_reasons: List[str] = Field(default_factory=list)
 
-
-# --- Step 5: Action Executor Schemas ---
 
 class ActionItem(BaseModel):
     id: str
@@ -170,7 +154,7 @@ class BilingualSummary(BaseModel):
 class PipelineTelemetry(BaseModel):
     step_latencies_ms: Dict[str, float] = Field(default_factory=dict)
     total_latency_ms: float = 0.0
-    llm_source: str = "gemini-2.5-flash"
+    extraction_engine: str = "Deterministic local rules"
     timestamp: str = ""
 
 
@@ -187,3 +171,35 @@ class Notice2ActionResponse(BaseModel):
     calendar_ics: str
     clarification_email_draft: str
     raw_document_pages: int
+
+
+class NoticeVersionSnapshot(BaseModel):
+    version_id: str = Field(..., min_length=1, max_length=80)
+    saved_at: str
+    extraction: StructuredNoticeExtraction
+    grounded_item_ids: List[str] = Field(default_factory=list)
+
+
+class NoticeVersionComparisonRequest(BaseModel):
+    older: NoticeVersionSnapshot
+    newer: NoticeVersionSnapshot
+
+
+class NoticeChangeItem(BaseModel):
+    section: Literal["DEADLINE", "ELIGIBILITY", "DOCUMENT", "FEE"]
+    change_type: Literal["ADDED", "REMOVED", "CHANGED"]
+    label: str
+    field_name: Optional[str] = None
+    before_value: Optional[str] = None
+    after_value: Optional[str] = None
+    before_quote: Optional[str] = None
+    after_quote: Optional[str] = None
+    before_page_number: Optional[int] = None
+    after_page_number: Optional[int] = None
+
+
+class NoticeVersionComparisonResponse(BaseModel):
+    older_version_id: str
+    newer_version_id: str
+    total_changes: int
+    changes: List[NoticeChangeItem] = Field(default_factory=list)

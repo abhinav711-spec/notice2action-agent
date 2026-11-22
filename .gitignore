@@ -1,52 +1,19 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual Environments
+.env
+.env.*
+!.env.example
 .venv/
 venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Environment Variables
-.env
-.env.local
-
-# Testing & Coverage
+__pycache__/
+*.py[cod]
 .pytest_cache/
 .coverage
 htmlcov/
-.tox/
-.nox/
-
-# IDE & Editor
-.vscode/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
 .idea/
-*.swp
-*.swo
-
-# OS files
-.DS_Store
+.vscode/
 Thumbs.db
+.DS_Store
